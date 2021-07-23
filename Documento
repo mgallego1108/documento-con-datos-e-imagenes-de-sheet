@@ -1,0 +1,93 @@
+function bitacoraSST() {
+  //CONFIGURACION
+var colfecha           = 3;
+var colHora            = 2;
+var colnombre          = 5;
+var colauditadoEPP     = 17;
+var colprocesoEPP      = 18;
+var colfotoEPP         = 19;
+var colauditadoH       = 25;
+var colprocesoHerr     = 26;
+var colfotoHerramienta = 24;
+
+//IDENTIFICACION
+// var carpetaID     = "1tsfkLst8bVBgEtDhGDwIGRZxWeyfI5Up"
+var plantillaID   = "1Dny0k7NRhvhT5onMza6eKPzbp_y2QizpM6mr0uCvqhg"
+var carpetacopia  = "1Az25uBaIVcwQ-_HkOEs9fAoYBepnc0wQ"
+
+// CONEXIONES
+var archivoPlantilla = DriveApp.getFileById(plantillaID);
+var carpetaDocs      = DriveApp.getFolderById(carpetacopia);
+var libro            = SpreadsheetApp.openById("1dGk3l1b5PJF2ijKuP7f2rjmUzLgjUSrWN9W9v7IdIyw");
+var hoja             = libro.getSheetByName("BITACORA SST");
+
+
+//Variables del documento
+var filaActiva = SpreadsheetApp.getActiveRange().getRow();
+var fecha      = hoja.getRange(filaActiva, colfecha).getDisplayValue();
+var hora       = hoja.getRange(filaActiva,colHora).getValue();
+var sSt        = hoja.getRange(filaActiva,colnombre).getValue();
+var auditEpp   = hoja.getRange(filaActiva,colauditadoEPP).getValue();
+var procesEPP  = hoja.getRange(filaActiva,colprocesoEPP).getValue();      
+var fotoEPP    = hoja.getRange(filaActiva,colfotoEPP).getValue();
+var auditHerr  = hoja.getRange(filaActiva,colauditadoH).getValue();
+var procesH    = hoja.getRange(filaActiva, colprocesoHerr).getValue();
+var fotoHer    = hoja.getRange(filaActiva, colfotoHerramienta).getValue();
+Logger.log(fotoEPP)
+//var resp2      = UrlFetchApp.fetch(fotoHer); // captura la URL de la foto
+
+
+//Crear copia
+var copiaArchivoPlantilla = archivoPlantilla.makeCopy(carpetaDocs);
+var copiaID               = copiaArchivoPlantilla.getId();
+var nombreDoc             = "Bitacora SST de "+ sSt +" "+ fecha;
+copiaArchivoPlantilla.setName(nombreDoc);
+var doc                   = DocumentApp.openById(copiaID);
+doc.setName(nombreDoc);
+
+
+// Reemplazar las variables
+doc.getBody().replaceText("<<FECHA>>", fecha);
+doc.getBody().replaceText("<<HORA>>", hora);
+doc.getBody().replaceText("<<SST TURNO>>", sSt);
+doc.getBody().replaceText("<<nombreAuditadoEPP>>", auditEpp);
+doc.getBody().replaceText("<<procesoauditadoEPP>>", procesEPP);
+doc.getBody().replaceText("<<nombreAuditadoH>>", auditHerr);
+doc.getBody().replaceText("<<procesoAuditadoH>>", procesH);
+
+
+
+//inserta la imagen
+var fileId    = fotoEPP.match(/[-\w]{25,}/);
+var fileId2   = fotoHer.match(/[-\w]{25,}/);
+var img       = DriveApp.getFileById(fileId).getBlob();
+var img2      = DriveApp.getFileById(fileId2).getBlob();
+var document  = doc.getBody().appendImage(img);
+var document2 = doc.getBody().appendImage(img2);
+var widht     = document.getWidth();
+var widht2    = document2.getWidth();
+var height    = document.getHeight();
+var height2   = document2.getHeight();
+var ratio     = widht/height;
+var ratio2    = widht2/height2;
+var newH      = 200/ratio;
+var newH2     = 200/ratio2;
+
+   document.setWidth(200).setHeight(newH);
+   document2.setWidth(200).setHeight(newH2);
+
+
+
+// pegar el url de la carta en la BD
+var urlCarta = copiaArchivoPlantilla.getUrl();
+var cartaBitacoraSst = hoja.getRange("AL" + filaActiva)
+cartaBitacoraSst.setValue(urlCarta);
+
+//Variables para correo
+var correo = "dleyton@csmsa.co, mgallego@csmsa.co"
+var cuerpo = "Cordial saludo"+"\n"+"Adjunto inspeccion realizada en el turno de SST "+sSt+" en la fecha "+fecha+"\n\n"+urlCarta
+MailApp.sendEmail(correo,"Inspeccion de turno "+fecha,cuerpo)
+
+
+
+}
